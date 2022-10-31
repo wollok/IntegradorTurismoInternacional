@@ -17,8 +17,16 @@ object sistemaTurismo {
 	}
 	
 	method sitiosVisitables(turista,pais) =
-		sitios.filter{s=>s.pais() == pais && s.puedeSerVisitado(turista)}
+		self.sitioDelPais(pais).filter{s=>s.puedeSerVisitado(turista)}
 	
+	method sitioMasVisitadoPorMenores() = 
+		sitios.max{s=>s.cantidadVisitasMenores()}
+		
+	method visitoAlgoEnPais(turista,pais) = 
+		self.sitioDelPais(pais).any{s=>s.fueVisitadoPor(turista)}
+	
+	method sitioDelPais(pais) =
+		sitios.filter{s=>s.pais() == pais} 
 } 
 
 
@@ -35,6 +43,21 @@ class Turista{
 	method cumplirAnios(){
 		edad += 1
 	}
+	
+	method pagar(importe) {
+		millas -= importe / sistemaTurismo.cotizacion()
+	}
+	method premio(millasPremio){
+		millas += millasPremio
+	}
+
+//	method visitar(sitio) {
+//		if(sitio.puedeSerVisitado(self)){
+//			sitios.add(sitio)
+//			self.pagar(sitio.importe(self))
+//		}
+//	}
+
 }
 
 
@@ -42,12 +65,28 @@ class Sitio {
 	
 	var precio
 	var property pais
+	const visitantes = []
 	
 	
 	method puedeSerVisitado(turista) = 
 		turista.puedePagar(self.importe(turista))
 	
 	method importe(turista) = precio
+	
+	method visitado(turista) {
+		if(self.puedeSerVisitado(turista)){
+			visitantes.add(turista)
+			turista.pagar(self.importe(turista))
+			self.darBonificacion(turista)
+		}
+	}
+	
+	method darBonificacion(turista) {}
+	
+	method cantidadVisitasMenores() = 
+		visitantes.count{t=>t.menor()}
+	
+	method fueVisitadoPor(turista) = visitantes.contains(turista)
 }
 
 class SitioInfantil inherits Sitio{
@@ -56,6 +95,9 @@ class SitioInfantil inherits Sitio{
 		super(turista) &&
 		turista.menor()
 	
+	override method darBonificacion(turista){ 
+	 	turista.premio(10)
+	 }
 }
 
 class SitioMayores inherits Sitio{
