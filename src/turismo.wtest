@@ -1,0 +1,12 @@
+import turismo.*
+
+describe "Turismo internacional" {
+	
+
+test "turismo" {
+
+	assert.that(true)
+
+}
+
+}
