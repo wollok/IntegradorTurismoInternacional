@@ -26,13 +26,39 @@ object sistemaTurismo {
 		self.sitioDelPais(pais).any{s=>s.fueVisitadoPor(turista)}
 	
 	method sitioDelPais(pais) =
-		sitios.filter{s=>s.pais() == pais} 
+		sitios.filter{s=>s.pais() == pais}
+		
+	method repartoMillas(){
+		turistas.forEach{t=> self.reparteMillasA(t)}
+	}
+	method reparteMillasA(turista) {
+		sitios.filter{s=>s.fueVisitadoPor(turista)}
+			.forEach{s=>s.darMilla(turista)}
+		turista.efectuarPenalidades()
+	}
+	method nuncaVisito(turista, categoria) =
+		not sitios.any{
+			s=> s.categoria() == categoria && 
+			s.fueVisitadoPor(turista)
+		}
+	
 } 
 
 
 class Turista{
 	var edad
 	var millas
+	const preferencias = []
+	
+	method agregarPreferencia(categoria){
+		preferencias.add(categoria)
+	}
+		
+	method quitarPreferencia(categoria){
+		preferencias.remove(categoria)
+	}
+	
+	method prefiere(categoria) = preferencias.contains(categoria)
 	
 	method puedePagar(importe) =
 		millas * sistemaTurismo.cotizacion() >= importe
@@ -50,6 +76,14 @@ class Turista{
 	method premio(millasPremio){
 		millas += millasPremio
 	}
+	method efectuarPenalidades(){
+		preferencias.forEach{p=>self.efectuarPenalidad(p)}
+	}
+	method efectuarPenalidad(categoria) {
+		if(sistemaTurismo.nuncaVisito(self,categoria))
+			self.premio(-10*categoria.millas())
+	}
+
 
 //	method visitar(sitio) {
 //		if(sitio.puedeSerVisitado(self)){
@@ -60,12 +94,16 @@ class Turista{
 
 }
 
+class Categoria {
+	var property millas
+}
 
 class Sitio {
 	
 	var precio
 	var property pais
 	const visitantes = []
+	var categoria = new Categoria(millas= 1)
 	
 	
 	method puedeSerVisitado(turista) = 
@@ -87,6 +125,11 @@ class Sitio {
 		visitantes.count{t=>t.menor()}
 	
 	method fueVisitadoPor(turista) = visitantes.contains(turista)
+	
+	method darMilla(turista){
+		if(turista.prefiere(categoria))
+			turista.premio(categoria.millas())
+	}
 }
 
 class SitioInfantil inherits Sitio{
